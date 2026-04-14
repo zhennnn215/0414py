@@ -1,3 +1,19 @@
+import os
+import json
+import firebase_admin
+from firebase_admin import credentials, firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
+
+if os.path.exists('serviceAccountKey.json'):
+    cred = credentials.Certificate('serviceAccountKey.json')
+else:
+    firebase_config = os.getenv('FIREBASE_CONFIG')
+    cred_dict = json.loads(firebase_config)
+    cred = credentials.Certificate(cred_dict)
+
+firebase_admin.initialize_app(cred)
+
+
 from flask import Flask, render_template, request
 from datetime import datetime
 import random
@@ -6,15 +22,28 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    homepage = "<h1>王鐸蓁Python網頁</h1>"
-    homepage += "<a href=/mis>MIS</a><br>"
-    homepage += "<a href=/today>顯示日期時間</a><br>"
-    homepage += "<a href=/welcome?nick=tcyang>傳送使用者暱稱</a><br>"
-    homepage += "<a href=/account>網頁表單傳值</a><br>"
-    homepage += "<a href=/about>鐸蓁簡介網頁</a><br>"
+    homepage = "<h1>歡迎進入王鐸蓁Python網頁</h1>"
+    homepage += "<a href=/mis>MIS</a><br><hr>"
+    homepage += "<a href=/today>顯示日期時間</a><br><hr>"
+    homepage += "<a href=/welcome?nick=tcyang>傳送使用者暱稱</a><br><hr>"
+    homepage += "<a href=/account>網頁表單傳值</a><br><hr>"
+    homepage += "<a href=/about>鐸蓁簡介網頁</a><br><hr>"
     homepage += "<a href=/math>數學運算</a><hr>" 
     homepage += "<a href=/cup>擲茭</a><hr>"
+    homepage += "<br><a href=/read>讀取Firestore資料</a><br>"
     return homepage
+
+@app.route("/read")
+def read():
+    db = firestore.client()
+
+    Temp = ""
+    collection_ref = db.collection("靜宜資管")
+    docs = collection_ref.order_by("lab", direction=firestore.Query.DESCENDING).limit(4).get()
+    for doc in docs:
+        Temp += str(doc.to_dict()) + "<br>"
+
+    return Temp
 
 @app.route("/mis")
 def course():
